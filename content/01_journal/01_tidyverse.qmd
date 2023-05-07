@@ -18,12 +18,7 @@ Analyze the sales by location (state) with a bar plot. Which state has the highe
 
 Analyze the sales by location and year.
 
-# Result
-
-Both challenges will be shown on the source code chapter below.
-
-## Source Code
-
+# Source Code
 
 ```{r}
 # Data Science at TUHH ------------------------------------------------------
@@ -109,10 +104,16 @@ bike_orderlines_wrangled_tbl <- bike_orderlines_joined_tbl %>%
   rename(bikeshop = name) %>%
   set_names(names(.) %>% str_replace_all("\\.", "_"))
 
+```
+
+# Result - Business Insights
+
+## Sales by Year
+```{r}
 # 6.0 Business Insights ----
 # 6.1 Sales by Year ----
-
 library(lubridate)
+library(dplyr)
 
 # Step 1 - Manipulate
 
@@ -136,6 +137,7 @@ sales_by_year_tbl <- bike_orderlines_wrangled_tbl %>%
 sales_by_year_tbl  
   
 # Step 2 - Visualize
+
 library(ggplot2)
 sales_by_year_tbl %>%
   
@@ -160,9 +162,14 @@ sales_by_year_tbl %>%
     x = "", # Override defaults for x and y
     y = "Revenue"
   )
-  
-# 6.2 Sales by Year and Category ----
+```
 
+## Sales by Year and Category
+```{r}
+# 6.2 Sales by Year and Category ----
+library(lubridate)
+library(dplyr)
+library(ggplot2)
 # Step 1 - Manipulate
 sales_by_year_cat_1_tbl <- bike_orderlines_wrangled_tbl %>%
 
@@ -205,8 +212,14 @@ sales_by_year_cat_1_tbl %>%
     subtitle = "Each product category has an upward trend",
     fill = "Main category" # Changes the legend name
   )
+```
 
+## Sales by Location
+```{r}
 # 6.3 Sales by Location ----
+library(lubridate)
+library(dplyr)
+library(ggplot2)
 
 # Step 1 - Manipulate
 sales_by_loc_tbl <- bike_orderlines_wrangled_tbl %>%
@@ -227,8 +240,14 @@ sales_by_loc_tbl <- bike_orderlines_wrangled_tbl %>%
                                      suffix = " €"))
 
 sales_by_loc_tbl
-
+```
+```{r plot1, fig.width=14, fig.height=10}
 # Step 2 - Visualize
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+library(lubridate)
+
 sales_by_loc_tbl %>%
   
   # Setup canvas with the columns year (x-axis) and sales (y-axis)
@@ -248,16 +267,18 @@ sales_by_loc_tbl %>%
                                                     suffix = " €")) +
   labs(
     title    = "Revenue by year",
-    subtitle = "Upward Trend",
     x = "", # Override defaults for x and y
     y = "Revenue"
   ) + 
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1)
   )
+```
 
-
+## Sales by Year and Location
+```{r}
 # 6.4 Sales by Year and Location ----
+library(dplyr)
 
 # Step 1 - Manipulate
 sales_by_year_loc_tbl <- bike_orderlines_wrangled_tbl %>%
@@ -278,6 +299,11 @@ sales_by_year_loc_tbl <- bike_orderlines_wrangled_tbl %>%
                                      suffix = " €"))
 
 sales_by_year_loc_tbl  
+```
+```{r plot2, fig.width = 10, fig.height = 7}
+library(dplyr)
+library(ggplot2)
+library(lubridate)
 # Step 2 - Visualize
 sales_by_year_loc_tbl %>%
   
@@ -304,9 +330,12 @@ sales_by_year_loc_tbl %>%
 theme(
   axis.text.x = element_text(angle = 45, hjust = 1)
 )
+```
 
-
+## Writing Files
+```{r}
 # 7.0 Writing Files ----
+library(tidyverse)
 
 # 7.1 Excel ----
 
