@@ -3,6 +3,394 @@ title: "Data Wrangling"
 author: "Muhammad Adrian"
 ---
 
-::: callout-note
-You can delete everything in here and start fresh.
-:::
+# Data wrangling
+
+In this section, the important process of data wrangling is acquired in detail. Therefore, data can further be prepared for the analysis and the foundation of exploratory data analysis. Moreover, the concept of data.table for handling big data is introduced too.
+
+
+# Challenge 1
+
+Challenge is carried out based on the reduced data.
+Patent Dominance: What US company/corporation has the most patent? List the 10 US companies with the most assigned patents
+
+## Source Code
+
+```{r}
+# 1.0 LOAD LIBRARY ----
+
+# Tidyverse
+library(tidyverse)
+library(vroom)
+
+# Data Table
+library(data.table)
+
+# 2.0 DATA IMPORT ----
+
+# 2.1 Assignee Data ----
+
+col_types_assigne <- list(
+  id = col_character(),
+  type = col_integer(),
+  organization = col_character()
+)
+
+assignee_data <- vroom(
+  file       = "../../Patent_data_reduced/assignee.tsv", 
+  delim      = "\t", 
+  col_types  = col_types_assigne,
+  na         = c("", "NA", "NULL")
+)
+
+# 2.2 Patent Assignee Data ----
+
+col_types_patent_assignee <- list(
+  patent_id = col_character(),
+  assignee_id = col_character()
+)
+
+patent_assignee_data <- vroom(
+  file       = "../../Patent_data_reduced/patent_assignee.tsv", 
+  delim      = "\t", 
+  col_types  = col_types_patent_assignee,
+  na         = c("", "NA", "NULL")
+)
+
+# 2.3 Patent Data ----
+
+col_types_patent <- list(
+  id = col_character(),
+  date = col_date("%Y-%m-%d"),
+  num_claims = col_integer()
+)
+
+patent_data <- vroom(
+  file       = "../../Patent_data_reduced/patent.tsv", 
+  delim      = "\t", 
+  col_types  = col_types_patent,
+  na         = c("", "NA", "NULL")
+)
+
+# 2.4 USPC Data ----
+
+col_types_uspc <- list(
+  patent_id = col_character(),
+  mainclass_id = col_character(),
+  sequence = col_integer()
+)
+
+uspc_data <- vroom(
+  file       = "../../Patent_data_reduced/uspc.tsv", 
+  delim      = "\t", 
+  col_types  = col_types_uspc,
+  na         = c("", "NA", "NULL")
+)
+
+# 3.0 CONVERT TO DATA.TABLE ----
+
+# 3.1 Assignee Data ----
+
+setDT(assignee_data)
+
+# 3.2 Patent Assignee Data ----
+
+setDT(patent_assignee_data)
+
+# 3.3 Patent Data ----
+
+setDT(patent_data)
+
+# 3.2 USPC Data ----
+
+setDT(uspc_data)
+
+# 4.0 DATA WRANGLING ----
+
+# 4.1 Joining / Merging Data ----
+
+# for question 1
+combined1_data <- merge(x = patent_assignee_data, y = assignee_data, 
+                       by.x = "assignee_id", by.y = "id", 
+                       all.x = TRUE, 
+                       all.y = FALSE)
+
+setkey(combined1_data, "type")
+key(combined1_data)
+
+setorderv(combined1_data, c("type"))
+
+
+# 4.4 Grouped Mutations ----
+
+# for question 1
+
+# 4.4.1.1 find the company from type = 2 with the most patent
+combined1_data[type == 2, .(count = .N), by = organization][order(-count)][1]
+# 4.4.1.2 find the top 10 companies from type = 2 with the most patent
+combined1_data[type == 2, .(count = .N), by = organization][order(-count)][1:10]
+
+
+```
+# Challenge 2
+
+Challenge is carried out based on the reduced data.
+Recent patent activity: What US company had the most patent granted in August 2014? List the 10 US companies with the most assigned patents for August 2014
+
+## Source Code
+
+```{r}
+# 1.0 LOAD LIBRARY ----
+
+# Tidyverse
+library(tidyverse)
+library(vroom)
+
+# Data Table
+library(data.table)
+
+# 2.0 DATA IMPORT ----
+
+# 2.1 Assignee Data ----
+
+col_types_assigne <- list(
+  id = col_character(),
+  type = col_integer(),
+  organization = col_character()
+)
+
+assignee_data <- vroom(
+  file       = "../../Patent_data_reduced/assignee.tsv", 
+  delim      = "\t", 
+  col_types  = col_types_assigne,
+  na         = c("", "NA", "NULL")
+)
+
+# 2.2 Patent Assignee Data ----
+
+col_types_patent_assignee <- list(
+  patent_id = col_character(),
+  assignee_id = col_character()
+)
+
+patent_assignee_data <- vroom(
+  file       = "../../Patent_data_reduced/patent_assignee.tsv", 
+  delim      = "\t", 
+  col_types  = col_types_patent_assignee,
+  na         = c("", "NA", "NULL")
+)
+
+# 2.3 Patent Data ----
+
+col_types_patent <- list(
+  id = col_character(),
+  date = col_date("%Y-%m-%d"),
+  num_claims = col_integer()
+)
+
+patent_data <- vroom(
+  file       = "../../Patent_data_reduced/patent.tsv", 
+  delim      = "\t", 
+  col_types  = col_types_patent,
+  na         = c("", "NA", "NULL")
+)
+
+# 2.4 USPC Data ----
+
+col_types_uspc <- list(
+  patent_id = col_character(),
+  mainclass_id = col_character(),
+  sequence = col_integer()
+)
+
+uspc_data <- vroom(
+  file       = "../../Patent_data_reduced/uspc.tsv", 
+  delim      = "\t", 
+  col_types  = col_types_uspc,
+  na         = c("", "NA", "NULL")
+)
+
+# 3.0 CONVERT TO DATA.TABLE ----
+
+# 3.1 Assignee Data ----
+
+setDT(assignee_data)
+
+# 3.2 Patent Assignee Data ----
+
+setDT(patent_assignee_data)
+
+# 3.3 Patent Data ----
+
+setDT(patent_data)
+
+# 3.2 USPC Data ----
+
+setDT(uspc_data)
+
+# 4.0 DATA WRANGLING ----
+
+# 4.1 Joining / Merging Data ----
+
+# for question 2
+
+combined2_data <- merge(x = combined1_data, y = patent_data, 
+                        by.x = "patent_id", by.y = "id", 
+                        all.x = TRUE, 
+                        all.y = FALSE)
+
+setkey(combined2_data, "type")
+key(combined2_data)
+
+setorderv(combined2_data, c("type"))
+
+
+# 4.4 Grouped Mutations ----
+
+# for question 2
+
+# 4.4.2.1 find the company from type = 2 with the most patent on Aug-2014
+combined2_data[type == 2 & lubridate::month(date, label = T, abbr = F) == "August" & lubridate::year(date) == "2014", .(count = .N), by = organization][order(-count)][1]
+# 4.4.2.2 find the top 10 companies from type = 2 with the most patent on Aug-2014
+combined2_data[type == 2 & lubridate::month(date, label = T, abbr = F) == "August" & lubridate::year(date) == "2014", .(count = .N), by = organization][order(-count)][1:10]
+
+
+```
+
+# Challenge 3
+
+Challenge is carried out based on the reduced data.
+Innovation in Tech: What is the most innovative tech sector? For the top 10 companies (worldwide) with the most patents, what are the top 5 USPTO tech main classes?
+
+## Source Code
+
+```{r}
+# 1.0 LOAD LIBRARY ----
+
+# Tidyverse
+library(tidyverse)
+library(vroom)
+
+# Data Table
+library(data.table)
+
+# 2.0 DATA IMPORT ----
+
+# 2.1 Assignee Data ----
+
+col_types_assigne <- list(
+  id = col_character(),
+  type = col_integer(),
+  organization = col_character()
+)
+
+assignee_data <- vroom(
+  file       = "../../Patent_data_reduced/assignee.tsv", 
+  delim      = "\t", 
+  col_types  = col_types_assigne,
+  na         = c("", "NA", "NULL")
+)
+
+# 2.2 Patent Assignee Data ----
+
+col_types_patent_assignee <- list(
+  patent_id = col_character(),
+  assignee_id = col_character()
+)
+
+patent_assignee_data <- vroom(
+  file       = "../../Patent_data_reduced/patent_assignee.tsv", 
+  delim      = "\t", 
+  col_types  = col_types_patent_assignee,
+  na         = c("", "NA", "NULL")
+)
+
+# 2.3 Patent Data ----
+
+col_types_patent <- list(
+  id = col_character(),
+  date = col_date("%Y-%m-%d"),
+  num_claims = col_integer()
+)
+
+patent_data <- vroom(
+  file       = "../../Patent_data_reduced/patent.tsv", 
+  delim      = "\t", 
+  col_types  = col_types_patent,
+  na         = c("", "NA", "NULL")
+)
+
+# 2.4 USPC Data ----
+
+col_types_uspc <- list(
+  patent_id = col_character(),
+  mainclass_id = col_character(),
+  sequence = col_integer()
+)
+
+uspc_data <- vroom(
+  file       = "../../Patent_data_reduced/uspc.tsv", 
+  delim      = "\t", 
+  col_types  = col_types_uspc,
+  na         = c("", "NA", "NULL")
+)
+
+# 3.0 CONVERT TO DATA.TABLE ----
+
+# 3.1 Assignee Data ----
+
+setDT(assignee_data)
+
+# 3.2 Patent Assignee Data ----
+
+setDT(patent_assignee_data)
+
+# 3.3 Patent Data ----
+
+setDT(patent_data)
+
+# 3.2 USPC Data ----
+
+setDT(uspc_data)
+
+# 4.0 DATA WRANGLING ----
+
+# 4.1 Joining / Merging Data ----
+
+# for question 3
+
+uspc1_data <- uspc_data[, lapply(.SD, mean), 
+          by = .(patent_id, mainclass_id), 
+          .SDcols = c("sequence")]
+
+combined3_data <- merge(x = combined2_data, y = uspc1_data, 
+                        by = "patent_id", 
+                        all.x = TRUE, 
+                        all.y = FALSE)
+
+setkey(combined3_data, "type")
+key(combined3_data)
+
+setorderv(combined3_data, c("type"))
+
+# 4.4 Grouped Mutations ----
+
+# for question 3
+
+# 4.4.3.1 most innovative tech sector
+combined3_data[!is.na(mainclass_id), .(count = .N), by = mainclass_id][order(-count)][1]
+
+  # remove NA value on mainclass_id
+  combined3_1_data <- combined3_data[!is.na(mainclass_id)]
+  # find the top 10 companies type = 3 (worldwide) with most patent
+  top10_company <- combined3_1_data[type == 3, .(count = .N), by = organization][order(-count)][1:10][, count := NULL]
+  # subset only the top 10 companies
+  combined3_2_data <- setDT(combined3_1_data, key='organization')[J(top10_company)]
+  
+# 4.4.3.2 find top 5 mainclass_id from these top 10 companies
+combined3_2_data[, .(count = .N), by = mainclass_id][order(-count)][1:5]
+
+
+```
+
+
+

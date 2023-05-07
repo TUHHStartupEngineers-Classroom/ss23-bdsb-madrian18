@@ -3,114 +3,62 @@ title: "Tidyverse"
 author: "Muhammad Adrian"
 ---
 
-::: callout-note
-You can delete everything in here and start fresh.
-:::
+# Introduction to tidyverse
 
-This is a `.qmd` file. It is plain text with special features. Any time you write just like this, it will be compiled to normal text in the website. If you put a \# in front of your text, it will create a top level-header.
-
-To learn more about Quarto websites visit <https://quarto.org/docs/websites>.
-
-# Text Formatting
-
-*italics* and **bold**
-
-superscript^2^ / subscript~2~
-
-~~strikethrough~~
-
-`verbatim code`
-
-> Blockquote
-
-# Headings
-
-## Header 2
-### Header 3
-#### Header 4
-##### Header 5
-###### Header 6
-
-# Links & Images
-
-<https://quarto.org>
-
-[Quarto](https://quarto.org)
-
-![Caption](../../assets/img/elephant.png)
-
-[![Caption](../../assets/img/elephant.png)](https://quarto.org)
-
-[![Caption](../../assets/img/elephant.png)](https://quarto.org "An elephant")
+In this section, process of importing data to visualizing data is acquired. The core concepts in the packages dplyr and ggplot2, which are parts of the tidyverse are introduced. These packages work together as part of larger data analysis pipeline. 
 
 
-# Lists
+# Challenge
 
-* unordered list
-    + sub-item 1
-    + sub-item 2
-        - sub-sub-item 1
-        
-*   item 2
+## Challenge 1
 
-    Continued (indent 4 spaces)
-    
-    
-1. ordered list
-2. item 2
-    i) sub-item 1
-         A.  sub-sub-item 1
-         
-(@)  A list whose numbering
+Analyze the sales by location (state) with a bar plot. Which state has the highest revenue? 
 
-continues after
+## Challenge 2
 
-(@)  an interruption
+Analyze the sales by location and year.
 
-# Tables
+# Result
 
-| Right | Left | Default | Center |
-|------:|:-----|---------|:------:|
-|   12  |  12  |    12   |    12  |
-|  123  |  123 |   123   |   123  |
-|    1  |    1 |     1   |     1  |
+Both challenges will be shown on the source code chapter below.
 
-# Source Code
+## Source Code
 
-Use ``` to delimit blocks of source code:
 
-```
+```{r}
 # Data Science at TUHH ------------------------------------------------------
 # SALES ANALYSIS ----
 
 # 1.0 Load libraries ----
 
 library(tidyverse)
+library(dplyr)
 
 # Excel Files
 library(readxl)
 
 # 2.0 Importing Files ----
 
-bikes_tbl      <- read_excel(path = "00_data/01_raw_data/bikes.xlsx")
-orderlines_tbl <- read_excel("00_data/01_raw_data/orderlines.xlsx")
+bikes_tbl      <- read_excel(path = "../../00_data/01_raw_data/bikes.xlsx")
 
-# Not necessary for this analysi
-bikeshops_tbl  <- read_excel("00_data/01_raw_data/bikeshops.xlsx")
+orderlines_tbl <- read_excel("../../00_data/01_raw_data/orderlines.xlsx")
+
+# Not necessary for this analysis
+bikeshops_tbl  <- read_excel("../../00_data/01_raw_data/bikeshops.xlsx")
 
 # 3.0 Examining Data ----
 
 # Method 1: Print it to the console
 orderlines_tbl
 
-# Method 2: Clicking on the file in the environment tab (or run View(orderlines_tbl)) There you can play around with the filter.
+# Method 2: Clicking on the file in the environment tab
 
-# Method 3: glimpse() function. Especially helpful for wide data (data with many columns)
+# Method 3: glimpse() function. 
 glimpse(orderlines_tbl)
 
 # 4.0 Joining Data ----
 
-# If the data has no common column name, you can provide each column name in the "by" argument. For example, by = c("a" = "b") will match x.a to y.b. The order of the columns has to match the order of the tibbles).
+# Left join 
 left_join(orderlines_tbl, bikes_tbl, by = c("product.id" = "bike.id"))
 
 # Chaining commands with the pipe and assigning it to order_items_joined_tbl
@@ -122,7 +70,7 @@ bike_orderlines_joined_tbl <- orderlines_tbl %>%
 bike_orderlines_joined_tbl %>% glimpse()
 
 # 5.0 Wrangling Data ----
-# All actions are chained with the pipe already. You can perform each step separately and use glimpse() or View() to validate your code. Store the result in a variable at the end of the steps.
+# All actions are chained with the pipe already. Perform each step separately and use glimpse() or View() to validate code. Store the result in a variable at the end of the steps.
 bike_orderlines_wrangled_tbl <- bike_orderlines_joined_tbl %>%
   # 5.1 Separate category name
   separate(col    = category,
@@ -143,20 +91,20 @@ bike_orderlines_wrangled_tbl <- bike_orderlines_joined_tbl %>%
   select(-...1, -gender) %>%
   
   # 5.3.2 by a pattern
-  # You can use the select_helpers to define patterns. 
+  # Select_helpers to define patterns. 
   # Type ?ends_with and click on Select helpers in the documentation
   select(-ends_with(".id")) %>%
   
-  # 5.3.3 Actually we need the column "order.id". Let's bind it back to the data
+  # 5.3.3 Need the column "order.id". Let's bind it back to the data
   bind_cols(bike_orderlines_joined_tbl %>% select(order.id)) %>% 
   
-  # 5.3.4 You can reorder the data by selecting the columns in your desired order.
-  # You can use select_helpers like contains() or everything()
+  # 5.3.4 Reorder the data by selecting the columns in your desired order.
+  # Select_helpers like contains() or everything()
   select(order.id, contains("order"), contains("model"), contains("category"),
          city, state, price, quantity, total.price,
          everything()) %>%
   
-  # 5.4 Rename columns because we actually wanted underscores instead of the dots
+  # 5.4 Rename columns to have underscores instead of the dots
   # (one at the time vs. multiple at once)
   rename(bikeshop = name) %>%
   set_names(names(.) %>% str_replace_all("\\.", "_"))
@@ -179,7 +127,6 @@ sales_by_year_tbl <- bike_orderlines_wrangled_tbl %>%
   summarize(sales = sum(total_price)) %>%
   
   # Optional: Add a column that turns the numbers into a currency format 
-  # (makes it in the plot optically more appealing)
   # mutate(sales_text = scales::dollar(sales)) <- Works for dollar values
   mutate(sales_text = scales::dollar(sales, big.mark = ".", 
                                      decimal.mark = ",", 
@@ -189,6 +136,7 @@ sales_by_year_tbl <- bike_orderlines_wrangled_tbl %>%
 sales_by_year_tbl  
   
 # Step 2 - Visualize
+library(ggplot2)
 sales_by_year_tbl %>%
   
   # Setup canvas with the columns year (x-axis) and sales (y-axis)
@@ -201,7 +149,7 @@ sales_by_year_tbl %>%
 
   # Formatting
   # scale_y_continuous(labels = scales::dollar) + # Change the y-axis. 
-  # Again, we have to adjust it for euro values
+  # Adjust to euro values
   scale_y_continuous(labels = scales::dollar_format(big.mark = ".", 
                                                     decimal.mark = ",", 
                                                     prefix = "", 
@@ -293,7 +241,7 @@ sales_by_loc_tbl %>%
   
   # Formatting
   # scale_y_continuous(labels = scales::dollar) + # Change the y-axis. 
-  # Again, we have to adjust it for euro values
+  # Adjust to euro values
   scale_y_continuous(labels = scales::dollar_format(big.mark = ".", 
                                                     decimal.mark = ",", 
                                                     prefix = "", 
@@ -361,31 +309,17 @@ theme(
 # 7.0 Writing Files ----
 
 # 7.1 Excel ----
-install.packages("writexl")
+
 library("writexl")
 bike_orderlines_wrangled_tbl %>%
-  write_xlsx("00_data/01_bike_sales/02_wrangled_data/bike_orderlines.xlsx")
+  write_xlsx("../../00_data/01_bike_sales/02_wrangled_data/bike_orderlines.xlsx")
 
 # 7.2 CSV ----
 bike_orderlines_wrangled_tbl %>% 
-  write_csv("00_data/01_bike_sales/02_wrangled_data/bike_orderlines.csv")
+  write_csv("../../00_data/01_bike_sales/02_wrangled_data/bike_orderlines.csv")
 
 # 7.3 RDS ----
 bike_orderlines_wrangled_tbl %>% 
-  write_rds("00_data/01_bike_sales/02_wrangled_data/bike_orderlines.rds")
+  write_rds("../../00_data/01_bike_sales/02_wrangled_data/bike_orderlines.rds")
 
-```
-
-Add a language to syntax highlight code blocks:
-
-```{r}
-1 + 1
-```
-
-```{r}
-cars
-```
-
-```{r}
-plot(cars)
 ```

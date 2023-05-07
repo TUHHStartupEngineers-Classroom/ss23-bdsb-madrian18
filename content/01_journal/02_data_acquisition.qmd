@@ -1,8 +1,248 @@
 ---
 title: "Data Acquisition"
-author: "Joschka Schwarz"
+author: "Muhammad Adrian"
 ---
 
-::: callout-note
-You can delete everything in here and start fresh.
-:::
+# Data acquisition
+
+In this section, process of importing data or data acquisition is acquired in detail. Therefore, imported data can further be viewed, stored, and analyzed. Web scraping process is introduced to gather available data on the internet. Connecting to database and acquiring the data from web will be presented.
+
+
+# Challenge 1
+
+Getting weather forecast data for 7-day in average in Hamburg.
+
+
+## Source Code
+
+```{r}
+# Load library
+library(httr)
+resp <- GET("https://api.open-meteo.com/v1/forecast?latitude=53.55&longitude=9.99&hourly=temperature_2m&timeformat=unixtime")
+
+library(jsonlite)
+library(dplyr)
+resp_tbl <- 
+  resp$content %>% 
+  rawToChar() %>% 
+  fromJSON() %>%
+  .[[9]] %>%
+  as_tibble()
+
+
+resp_tbl$time <- as.POSIXct(resp_tbl$time, origin="1970-01-01")
+
+
+# Step 2 - Visualize
+library(ggplot2)
+  
+  # Setup canvas with the columns year (x-axis) and sales (y-axis)
+  ggplot(data=resp_tbl, aes(x = time, y = temperature_2m, group=1)) +
+  
+  # Geometries
+  geom_line(color="cyan") + # Use geom_line(color) for a color line
+
+  # Formatting
+
+  labs(
+    title    = "Weather forecast in Hamburg",
+    subtitle = "for 7 days",
+    x = "", # Override defaults for x and y
+    y = "Temperature 2m"
+    ) + 
+    theme(
+      axis.text.x = element_text(angle = 90, hjust = 1)
+    )
+  
+```
+
+# Challenge 2
+
+Rose bike website scrape for small database that contains the model. names and prices.
+
+## Source Code
+
+```{r}
+# WEBSCRAPING ----
+
+# 1.0 LIBRARIES ----
+
+library(tidyverse) # Main Package - Loads dplyr, purrr, etc.
+library(rvest)     # HTML Hacking & Web Scraping
+library(xopen)     # Quickly opening URLs
+library(jsonlite)  # converts JSON files to R objects
+library(glue)      # concatenate strings
+library(stringi)   # character string/text processing
+
+# 1.1 ROSE HOME PRODUCTS FAMILIES ----
+
+url_home          <- "https://www.rosebikes.com/"
+xopen(url_home) # Open links directly from RStudio to inspect them
+
+# Read in the HTML for the entire webpage
+html_home         <- read_html(url_home)
+
+# Web scrape the ids for the families
+rose_home_tbl <- html_home %>%
+  
+  # Get the nodes for the families ...
+  html_nodes(css = ".js-main-navigation__item-button") %>%
+  # ...and extract the information of the id attribute
+  html_attr('href')  %>%
+  
+  # Remove the product families Gear and Outlet and Woman 
+  # (because the female bikes are also listed with the others)
+  discard(.p = ~stringr::str_detect(.x,"clothing|parts|accessories|sale|brands")) %>%
+  
+  # Convert vector to tibble
+  enframe(name = "position", value = "home_class") %>%
+  
+  # Add a hashtag so we can get nodes of the categories by id (#)
+  mutate(
+    url = glue("https://www.rosebikes.com/{home_class}")
+  )
+
+url_bikes <- rose_home_tbl$url
+url_bikes
+
+# 1.1 COLLECT PRODUCT FAMILIES ----
+
+
+xopen(url_bikes) # Open links directly from RStudio to inspect them
+
+# Read in the HTML for the entire webpage
+html_bikes         <- read_html(url_bikes)
+
+# Web scrape the ids for the families
+bike_family_tbl <- html_bikes %>%
+  
+  # Get the nodes for the families ...
+  html_nodes(css = ".catalog-navigation__link") %>%
+  # ...and extract the information of the id attribute
+  html_attr('href')  %>%
+
+  # Remove the product families Gear and Outlet and Woman 
+  # (because the female bikes are also listed with the others)
+  discard(.p = ~stringr::str_detect(.x,"urban|short-delivery")) %>%
+  
+  # Convert vector to tibble
+  enframe(name = "position", value = "family_class") %>%
+  
+  # Add a hashtag so we can get nodes of the categories by id (#)
+  mutate(
+    url = glue("https://www.rosebikes.com/{family_class}")
+  )
+
+
+# 2.0 COLLECT BIKE DATA ----
+
+# 2.1 Get URL for each bike of the Product categories
+
+# select first bike category url
+bike_category_url <- bike_family_tbl$url[1]
+xopen(bike_category_url)
+
+# Get the URLs for the bikes of the first category
+html_bike_category  <- read_html(bike_category_url)
+
+bike_url_tbl        <- html_bike_category %>%
+
+  # Get the 'a' nodes, which are hierarchally underneath 
+  # the class productTile__contentWrapper
+  html_nodes(css = ".catalog-category-bikes__button") %>%
+  html_attr("href") %>%
+  
+  # Convert vector to tibble
+  enframe(name = "position", value = "bike_model_class") %>%
+  
+  # Add a hashtag so we can get nodes of the categories by id (#)
+  mutate(
+    url = glue("https://www.rosebikes.com/{bike_model_class}")
+  )
+
+
+# 2.1.2 Extract the price (since we have retrieved the data already)
+bike_price_tbl <- html_bike_category %>%
+  
+  # Get the nodes in the meta tag where the attribute itemprop equals description
+  html_nodes(".catalog-category-bikes__price-title") %>%
+  
+  # Extract the content of the attribute content
+  html_text() %>%
+
+  # Convert vector to tibble
+  enframe(name = "position", value = "price") 
+
+bike_price_tbl$price <- gsub('[from €,]','',(bike_price_tbl$price))
+bike_price_tbl$price <- as.numeric(bike_price_tbl$price)
+
+# 2.2 Wrap it into a function ----
+
+get_bike_data <- function(url) {
+  
+  html_bike_category <- read_html(url)
+  
+  # Get the URLs
+  bike_url_tbl  <- html_bike_category %>%
+    html_nodes(css = ".catalog-category-bikes__button") %>%
+    html_attr("href") %>%
+    enframe(name = "position", value = "bike_model_class") %>%
+    mutate(
+      url = glue("https://www.rosebikes.com/{bike_model_class}")
+    )
+  # Get the price
+  bike_price_tbl <- html_bike_category %>%
+    html_nodes(".catalog-category-bikes__price-title") %>%
+    html_text() %>%
+    enframe(name = "position", value = "price_in_Euro") %>%
+    left_join(bike_url_tbl)
+}
+
+bike_category_url <- bike_family_tbl$url[1]
+bike_data_tbl     <- get_bike_data(url = bike_category_url)
+
+bike_data_tbl$bike_model_class <- gsub('-/-','-',(bike_data_tbl$bike_model_class))
+
+# 2.3.1a Map the function against all urls
+
+# Extract the urls as a character vector
+bike_category_url_vec <- bike_family_tbl %>% 
+  pull(url)
+
+# Run the function with every url as an argument
+bike_data_lst <- map(bike_category_url_vec, get_bike_data)
+
+# Merge the list into a tibble
+bike_data_tbl <- bind_rows(bike_data_lst)
+saveRDS(bike_data_tbl, "bike_data_tbl.rds")
+
+bike_data_tbl$bike_model_class <- gsub('-/-','-',(bike_data_tbl$bike_model_class))
+
+# Filter non Canyon bikes (based on id length) and add an empty column for the colors
+bike_data_cleaned_tbl <- bike_data_tbl %>%
+  
+  # Filter for bikes. Only unique ones
+  
+  # Split categories ()
+  separate(col = bike_model_class,
+           into = c("empty",
+                    "product",
+                    "model",
+                    "ride_type",
+                    "ride_style"),
+           sep = "/") %>%
+
+  # Select and order columns
+
+  select(product, model, ride_type, ride_style, url, price_in_Euro)
+
+bike_data_cleaned_tbl$price_in_Euro <- gsub('[from €,]','',(bike_data_cleaned_tbl$price_in_Euro))
+bike_data_cleaned_tbl$price_in_Euro <- as.numeric(bike_data_cleaned_tbl$price_in_Euro)
+
+
+bike_data_cleaned_tbl
+
+# Save data as RDS
+
+saveRDS(bike_data_cleaned_tbl, "bike_data_cleaned_tbl.rds")
+```
