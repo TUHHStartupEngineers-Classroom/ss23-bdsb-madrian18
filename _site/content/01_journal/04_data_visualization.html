@@ -232,29 +232,17 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>Map the time course of the cumulative Covid-19 cases.</p>
 <section id="source-code" class="level2" data-number="2.1"><h2 data-number="2.1" class="anchored" data-anchor-id="source-code">
 <span class="header-section-number">2.1</span> Source Code</h2>
-<div class="cell" data-hash="04_data_visualization_cache/html/unnamed-chunk-1_5fed409646ecb1f39a57bac4c6fca4e8">
+<div class="cell" data-hash="04_data_visualization_cache/html/unnamed-chunk-1_59f1161246e576507c4e8714440d0389">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a><span class="co"># 1.0 LOAD LIBRARY ----</span></span>
 <span id="cb1-2"><a href="#cb1-2"></a></span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="fu">library</span>(tidyverse)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="fu">library</span>(ggrepel)</span>
+<span id="cb1-5"><a href="#cb1-5"></a></span>
+<span id="cb1-6"><a href="#cb1-6"></a><span class="co"># 2.0 DATA IMPORT ----</span></span>
+<span id="cb1-7"><a href="#cb1-7"></a></span>
+<span id="cb1-8"><a href="#cb1-8"></a>covid_data_tbl <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"https://covid.ourworldindata.org/data/owid-covid-data.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>#&gt; ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-#&gt; ✔ dplyr     1.1.2     ✔ readr     2.1.4
-#&gt; ✔ forcats   1.0.0     ✔ stringr   1.5.0
-#&gt; ✔ ggplot2   3.4.2     ✔ tibble    3.2.1
-#&gt; ✔ lubridate 1.9.2     ✔ tidyr     1.3.0
-#&gt; ✔ purrr     1.0.1     
-#&gt; ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-#&gt; ✖ dplyr::filter() masks stats::filter()
-#&gt; ✖ dplyr::lag()    masks stats::lag()
-#&gt; ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a><span class="fu">library</span>(ggrepel)</span>
-<span id="cb3-2"><a href="#cb3-2"></a></span>
-<span id="cb3-3"><a href="#cb3-3"></a><span class="co"># 2.0 DATA IMPORT ----</span></span>
-<span id="cb3-4"><a href="#cb3-4"></a></span>
-<span id="cb3-5"><a href="#cb3-5"></a>covid_data_tbl <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"https://covid.ourworldindata.org/data/owid-covid-data.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>#&gt; Rows: 307911 Columns: 67
+<pre><code>#&gt; Rows: 307912 Columns: 67
 #&gt; ── Column specification ────────────────────────────────────────────────────────
 #&gt; Delimiter: ","
 #&gt; chr   (4): iso_code, continent, location, tests_units
@@ -264,119 +252,123 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 #&gt; ℹ Use `spec()` to retrieve the full column specification for this data.
 #&gt; ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a><span class="co"># 3.0 DATA WRANGLING ----</span></span>
-<span id="cb5-2"><a href="#cb5-2"></a></span>
-<span id="cb5-3"><a href="#cb5-3"></a><span class="co"># 3.1 Manipulate for continent = Europe</span></span>
-<span id="cb5-4"><a href="#cb5-4"></a></span>
-<span id="cb5-5"><a href="#cb5-5"></a><span class="co"># Select columns and filter categories</span></span>
-<span id="cb5-6"><a href="#cb5-6"></a>total_case_continent_tbl <span class="ot">&lt;-</span> covid_data_tbl <span class="sc">%&gt;%</span></span>
-<span id="cb5-7"><a href="#cb5-7"></a>  </span>
-<span id="cb5-8"><a href="#cb5-8"></a>  <span class="fu">select</span>(continent, location, date, total_cases) <span class="sc">%&gt;%</span></span>
-<span id="cb5-9"><a href="#cb5-9"></a>  </span>
-<span id="cb5-10"><a href="#cb5-10"></a>  <span class="co"># Filter only Europe</span></span>
-<span id="cb5-11"><a href="#cb5-11"></a>  <span class="fu">filter</span>(continent <span class="sc">==</span> <span class="st">"Europe"</span> <span class="sc">&amp;</span> date <span class="sc">&lt;</span> <span class="fu">Sys.Date</span>()<span class="sc">-</span><span class="dv">4</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb5-12"><a href="#cb5-12"></a>  </span>
-<span id="cb5-13"><a href="#cb5-13"></a>  <span class="co"># Group by category and summarize</span></span>
-<span id="cb5-14"><a href="#cb5-14"></a>  <span class="fu">group_by</span>(continent,location,date) <span class="sc">%&gt;%</span></span>
-<span id="cb5-15"><a href="#cb5-15"></a>  <span class="fu">summarise</span>(<span class="at">total_cases =</span> <span class="fu">sum</span>(total_cases)) <span class="sc">%&gt;%</span></span>
-<span id="cb5-16"><a href="#cb5-16"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb5-17"><a href="#cb5-17"></a>  </span>
-<span id="cb5-18"><a href="#cb5-18"></a>  <span class="co"># Replace all NA value to 0</span></span>
-<span id="cb5-19"><a href="#cb5-19"></a>  <span class="fu">replace</span>(<span class="fu">is.na</span>(.), <span class="dv">0</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb5-20"><a href="#cb5-20"></a>  </span>
-<span id="cb5-21"><a href="#cb5-21"></a>  <span class="co"># Group by category and summarize</span></span>
-<span id="cb5-22"><a href="#cb5-22"></a>  <span class="fu">group_by</span>(continent,date) <span class="sc">%&gt;%</span></span>
-<span id="cb5-23"><a href="#cb5-23"></a>  <span class="fu">summarise</span>(<span class="at">total_cases =</span> <span class="fu">sum</span>(total_cases)) <span class="sc">%&gt;%</span></span>
-<span id="cb5-24"><a href="#cb5-24"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb5-25"><a href="#cb5-25"></a>  </span>
-<span id="cb5-26"><a href="#cb5-26"></a>  <span class="co"># Rename column name</span></span>
-<span id="cb5-27"><a href="#cb5-27"></a>  <span class="fu">rename</span>(<span class="st">'Continent/ Country'</span> <span class="ot">=</span> continent,</span>
-<span id="cb5-28"><a href="#cb5-28"></a>         <span class="st">'Cumulative'</span> <span class="ot">=</span> total_cases)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a><span class="co"># 3.0 DATA WRANGLING ----</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a></span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="co"># 3.1 Manipulate for continent = Europe</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a></span>
+<span id="cb3-5"><a href="#cb3-5"></a><span class="co"># Select columns and filter categories</span></span>
+<span id="cb3-6"><a href="#cb3-6"></a>total_case_continent_tbl <span class="ot">&lt;-</span> covid_data_tbl <span class="sc">%&gt;%</span></span>
+<span id="cb3-7"><a href="#cb3-7"></a>  </span>
+<span id="cb3-8"><a href="#cb3-8"></a>  <span class="fu">select</span>(continent, location, date, total_cases) <span class="sc">%&gt;%</span></span>
+<span id="cb3-9"><a href="#cb3-9"></a>  </span>
+<span id="cb3-10"><a href="#cb3-10"></a>  <span class="co"># Filter only Europe</span></span>
+<span id="cb3-11"><a href="#cb3-11"></a>  <span class="fu">filter</span>(continent <span class="sc">==</span> <span class="st">"Europe"</span> <span class="sc">&amp;</span> date <span class="sc">&lt;</span> <span class="fu">Sys.Date</span>()<span class="sc">-</span><span class="dv">4</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb3-12"><a href="#cb3-12"></a>  </span>
+<span id="cb3-13"><a href="#cb3-13"></a>  <span class="co"># Group by category and summarize</span></span>
+<span id="cb3-14"><a href="#cb3-14"></a>  <span class="fu">group_by</span>(continent,location,date) <span class="sc">%&gt;%</span></span>
+<span id="cb3-15"><a href="#cb3-15"></a>  <span class="fu">summarise</span>(<span class="at">total_cases =</span> <span class="fu">sum</span>(total_cases)) <span class="sc">%&gt;%</span></span>
+<span id="cb3-16"><a href="#cb3-16"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb3-17"><a href="#cb3-17"></a>  </span>
+<span id="cb3-18"><a href="#cb3-18"></a>  <span class="co"># Replace all NA value to 0</span></span>
+<span id="cb3-19"><a href="#cb3-19"></a>  <span class="fu">replace</span>(<span class="fu">is.na</span>(.), <span class="dv">0</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb3-20"><a href="#cb3-20"></a>  </span>
+<span id="cb3-21"><a href="#cb3-21"></a>  <span class="co"># Group by category and summarize</span></span>
+<span id="cb3-22"><a href="#cb3-22"></a>  <span class="fu">group_by</span>(continent,date) <span class="sc">%&gt;%</span></span>
+<span id="cb3-23"><a href="#cb3-23"></a>  <span class="fu">summarise</span>(<span class="at">total_cases =</span> <span class="fu">sum</span>(total_cases)) <span class="sc">%&gt;%</span></span>
+<span id="cb3-24"><a href="#cb3-24"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb3-25"><a href="#cb3-25"></a>  </span>
+<span id="cb3-26"><a href="#cb3-26"></a>  <span class="co"># Rename column name</span></span>
+<span id="cb3-27"><a href="#cb3-27"></a>  <span class="fu">rename</span>(<span class="st">'Continent/ Country'</span> <span class="ot">=</span> continent,</span>
+<span id="cb3-28"><a href="#cb3-28"></a>         <span class="st">'Cumulative'</span> <span class="ot">=</span> total_cases)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>#&gt; `summarise()` has grouped output by 'continent', 'location'. You can override
 #&gt; using the `.groups` argument.
 #&gt; `summarise()` has grouped output by 'continent'. You can override using the
 #&gt; `.groups` argument.</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a><span class="co"># 3.2 Manipulate for location = Germany, UK, France, Spain, US</span></span>
-<span id="cb7-2"><a href="#cb7-2"></a></span>
-<span id="cb7-3"><a href="#cb7-3"></a><span class="co"># Select columns and filter categories</span></span>
-<span id="cb7-4"><a href="#cb7-4"></a>total_case_location_tbl <span class="ot">&lt;-</span> covid_data_tbl <span class="sc">%&gt;%</span></span>
-<span id="cb7-5"><a href="#cb7-5"></a>  </span>
-<span id="cb7-6"><a href="#cb7-6"></a>  <span class="fu">select</span>(location, date, total_cases) <span class="sc">%&gt;%</span></span>
-<span id="cb7-7"><a href="#cb7-7"></a>  <span class="fu">filter</span>(location <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Germany"</span>,<span class="st">"United Kingdom"</span>,<span class="st">"France"</span>,<span class="st">"Spain"</span>,<span class="st">"United States"</span>) <span class="sc">&amp;</span> date <span class="sc">&lt;</span> <span class="fu">Sys.Date</span>()<span class="sc">-</span><span class="dv">4</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb7-8"><a href="#cb7-8"></a>  </span>
-<span id="cb7-9"><a href="#cb7-9"></a>  <span class="co"># Group by category and summarize</span></span>
-<span id="cb7-10"><a href="#cb7-10"></a>  <span class="fu">group_by</span>(location, date) <span class="sc">%&gt;%</span></span>
-<span id="cb7-11"><a href="#cb7-11"></a>  <span class="fu">summarise</span>(<span class="at">total_cases =</span> <span class="fu">sum</span>(total_cases)) <span class="sc">%&gt;%</span></span>
-<span id="cb7-12"><a href="#cb7-12"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb7-13"><a href="#cb7-13"></a>  </span>
-<span id="cb7-14"><a href="#cb7-14"></a>  <span class="co"># Replace all NA value to 0</span></span>
-<span id="cb7-15"><a href="#cb7-15"></a>  <span class="fu">replace</span>(<span class="fu">is.na</span>(.), <span class="dv">0</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb7-16"><a href="#cb7-16"></a>  </span>
-<span id="cb7-17"><a href="#cb7-17"></a>  <span class="co"># Rename column name</span></span>
-<span id="cb7-18"><a href="#cb7-18"></a>  <span class="fu">rename</span>(<span class="st">'Continent/ Country'</span> <span class="ot">=</span> location,</span>
-<span id="cb7-19"><a href="#cb7-19"></a>         <span class="st">'Cumulative'</span> <span class="ot">=</span> total_cases)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a><span class="co"># 3.2 Manipulate for location = Germany, UK, France, Spain, US</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a></span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="co"># Select columns and filter categories</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a>total_case_location_tbl <span class="ot">&lt;-</span> covid_data_tbl <span class="sc">%&gt;%</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a>  </span>
+<span id="cb5-6"><a href="#cb5-6"></a>  <span class="fu">select</span>(location, date, total_cases) <span class="sc">%&gt;%</span></span>
+<span id="cb5-7"><a href="#cb5-7"></a>  <span class="fu">filter</span>(location <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Germany"</span>,<span class="st">"United Kingdom"</span>,<span class="st">"France"</span>,<span class="st">"Spain"</span>,<span class="st">"United States"</span>) <span class="sc">&amp;</span> date <span class="sc">&lt;</span> <span class="fu">Sys.Date</span>()<span class="sc">-</span><span class="dv">4</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb5-8"><a href="#cb5-8"></a>  </span>
+<span id="cb5-9"><a href="#cb5-9"></a>  <span class="co"># Group by category and summarize</span></span>
+<span id="cb5-10"><a href="#cb5-10"></a>  <span class="fu">group_by</span>(location, date) <span class="sc">%&gt;%</span></span>
+<span id="cb5-11"><a href="#cb5-11"></a>  <span class="fu">summarise</span>(<span class="at">total_cases =</span> <span class="fu">sum</span>(total_cases)) <span class="sc">%&gt;%</span></span>
+<span id="cb5-12"><a href="#cb5-12"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb5-13"><a href="#cb5-13"></a>  </span>
+<span id="cb5-14"><a href="#cb5-14"></a>  <span class="co"># Replace all NA value to 0</span></span>
+<span id="cb5-15"><a href="#cb5-15"></a>  <span class="fu">replace</span>(<span class="fu">is.na</span>(.), <span class="dv">0</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb5-16"><a href="#cb5-16"></a>  </span>
+<span id="cb5-17"><a href="#cb5-17"></a>  <span class="co"># Rename column name</span></span>
+<span id="cb5-18"><a href="#cb5-18"></a>  <span class="fu">rename</span>(<span class="st">'Continent/ Country'</span> <span class="ot">=</span> location,</span>
+<span id="cb5-19"><a href="#cb5-19"></a>         <span class="st">'Cumulative'</span> <span class="ot">=</span> total_cases)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>#&gt; `summarise()` has grouped output by 'location'. You can override using the
 #&gt; `.groups` argument.</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a><span class="co"># 3.3 Join row from 2 tables</span></span>
-<span id="cb9-2"><a href="#cb9-2"></a></span>
-<span id="cb9-3"><a href="#cb9-3"></a>total_case_combined <span class="ot">&lt;-</span> total_case_continent_tbl <span class="sc">%&gt;%</span></span>
-<span id="cb9-4"><a href="#cb9-4"></a>  <span class="fu">bind_rows</span>(total_case_location_tbl)</span>
-<span id="cb9-5"><a href="#cb9-5"></a></span>
-<span id="cb9-6"><a href="#cb9-6"></a><span class="co"># 3.4 Create Date 4 days prior the Sys.Date due to data is not completed at Sys.Date</span></span>
-<span id="cb9-7"><a href="#cb9-7"></a></span>
-<span id="cb9-8"><a href="#cb9-8"></a>n <span class="ot">=</span> <span class="fu">Sys.Date</span>()<span class="sc">-</span><span class="dv">4</span></span>
-<span id="cb9-9"><a href="#cb9-9"></a></span>
-<span id="cb9-10"><a href="#cb9-10"></a></span>
-<span id="cb9-11"><a href="#cb9-11"></a><span class="co"># 3.5 Filter the last values to show labels on the plot</span></span>
-<span id="cb9-12"><a href="#cb9-12"></a>data_ends <span class="ot">&lt;-</span> total_case_combined <span class="sc">%&gt;%</span> </span>
-<span id="cb9-13"><a href="#cb9-13"></a>  <span class="fu">group_by</span>(<span class="st">`</span><span class="at">Continent/ Country</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb9-14"><a href="#cb9-14"></a>  <span class="fu">top_n</span>(<span class="dv">1</span>, date) </span>
-<span id="cb9-15"><a href="#cb9-15"></a></span>
-<span id="cb9-16"><a href="#cb9-16"></a><span class="co"># 4.0 DATA VISUALIZATION ----</span></span>
-<span id="cb9-17"><a href="#cb9-17"></a></span>
-<span id="cb9-18"><a href="#cb9-18"></a><span class="co"># Line Plot</span></span>
-<span id="cb9-19"><a href="#cb9-19"></a>total_case_combined <span class="sc">%&gt;%</span></span>
-<span id="cb9-20"><a href="#cb9-20"></a>  </span>
-<span id="cb9-21"><a href="#cb9-21"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x=</span>date, <span class="at">y=</span><span class="st">`</span><span class="at">Cumulative</span><span class="st">`</span>, <span class="at">group =</span> <span class="st">`</span><span class="at">Continent/ Country</span><span class="st">`</span>, <span class="at">color =</span> <span class="st">`</span><span class="at">Continent/ Country</span><span class="st">`</span>)) <span class="sc">+</span></span>
-<span id="cb9-22"><a href="#cb9-22"></a>  </span>
-<span id="cb9-23"><a href="#cb9-23"></a>  <span class="fu">geom_line</span>(<span class="at">size =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
-<span id="cb9-24"><a href="#cb9-24"></a></span>
-<span id="cb9-25"><a href="#cb9-25"></a>  <span class="fu">scale_x_date</span>(<span class="at">date_breaks=</span><span class="st">"1 month"</span>, <span class="at">date_labels =</span> <span class="st">"%B'%y"</span>, <span class="at">limits =</span> <span class="fu">as.Date</span>(<span class="fu">c</span>(<span class="st">'2020-01-01'</span>,<span class="st">'2023-06-01'</span>)) ) <span class="sc">+</span></span>
-<span id="cb9-26"><a href="#cb9-26"></a></span>
-<span id="cb9-27"><a href="#cb9-27"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span><span class="fu">number_format</span>(<span class="at">scale =</span> <span class="fl">1e-6</span>, </span>
-<span id="cb9-28"><a href="#cb9-28"></a>                                                    <span class="at">prefix =</span> <span class="st">""</span>,</span>
-<span id="cb9-29"><a href="#cb9-29"></a>                                                    <span class="at">suffix =</span> <span class="st">" M"</span>)) <span class="sc">+</span></span>
-<span id="cb9-30"><a href="#cb9-30"></a>  </span>
-<span id="cb9-31"><a href="#cb9-31"></a>  <span class="fu">scale_color_brewer</span>(<span class="at">palette=</span><span class="st">"Accent"</span>) <span class="sc">+</span></span>
-<span id="cb9-32"><a href="#cb9-32"></a>  </span>
-<span id="cb9-33"><a href="#cb9-33"></a>  <span class="fu">labs</span>(</span>
-<span id="cb9-34"><a href="#cb9-34"></a>    <span class="at">title    =</span> <span class="st">"COVID-19 Confirmed Cases Worldwide"</span>,</span>
-<span id="cb9-35"><a href="#cb9-35"></a>    <span class="at">subtitle =</span> <span class="fu">str_glue</span>(<span class="st">"As of {n}"</span>),</span>
-<span id="cb9-36"><a href="#cb9-36"></a>    <span class="at">x =</span> <span class="st">""</span>, <span class="co"># Override defaults for x and y</span></span>
-<span id="cb9-37"><a href="#cb9-37"></a>    <span class="at">y =</span> <span class="st">"Cumulative Cases"</span></span>
-<span id="cb9-38"><a href="#cb9-38"></a>  ) <span class="sc">+</span> </span>
-<span id="cb9-39"><a href="#cb9-39"></a>  </span>
-<span id="cb9-40"><a href="#cb9-40"></a><span class="fu">theme</span>(</span>
-<span id="cb9-41"><a href="#cb9-41"></a>  <span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">hjust =</span> <span class="dv">1</span>),</span>
-<span id="cb9-42"><a href="#cb9-42"></a>  <span class="at">legend.position =</span> <span class="st">"bottom"</span></span>
-<span id="cb9-43"><a href="#cb9-43"></a>) <span class="sc">+</span></span>
-<span id="cb9-44"><a href="#cb9-44"></a></span>
-<span id="cb9-45"><a href="#cb9-45"></a><span class="fu">geom_label_repel</span>(<span class="fu">aes</span>(<span class="at">label =</span> scales<span class="sc">::</span><span class="fu">number</span>(Cumulative)), </span>
-<span id="cb9-46"><a href="#cb9-46"></a>                <span class="at">data =</span> data_ends,</span>
-<span id="cb9-47"><a href="#cb9-47"></a>                <span class="at">nudge_x =</span> <span class="dv">1</span>,</span>
-<span id="cb9-48"><a href="#cb9-48"></a>                <span class="at">box.padding =</span> <span class="fl">0.5</span>,</span>
-<span id="cb9-49"><a href="#cb9-49"></a>                <span class="at">show.legend =</span> <span class="cn">FALSE</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a><span class="co"># 3.3 Join row from 2 tables</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a></span>
+<span id="cb7-3"><a href="#cb7-3"></a>total_case_combined <span class="ot">&lt;-</span> total_case_continent_tbl <span class="sc">%&gt;%</span></span>
+<span id="cb7-4"><a href="#cb7-4"></a>  <span class="fu">bind_rows</span>(total_case_location_tbl)</span>
+<span id="cb7-5"><a href="#cb7-5"></a></span>
+<span id="cb7-6"><a href="#cb7-6"></a><span class="co"># 3.4 Create Date 4 days prior the Sys.Date due to data is not completed at Sys.Date</span></span>
+<span id="cb7-7"><a href="#cb7-7"></a></span>
+<span id="cb7-8"><a href="#cb7-8"></a>n <span class="ot">=</span> <span class="fu">Sys.Date</span>()<span class="sc">-</span><span class="dv">4</span></span>
+<span id="cb7-9"><a href="#cb7-9"></a></span>
+<span id="cb7-10"><a href="#cb7-10"></a></span>
+<span id="cb7-11"><a href="#cb7-11"></a><span class="co"># 3.5 Filter the last values to show labels on the plot</span></span>
+<span id="cb7-12"><a href="#cb7-12"></a>data_ends <span class="ot">&lt;-</span> total_case_combined <span class="sc">%&gt;%</span> </span>
+<span id="cb7-13"><a href="#cb7-13"></a>  <span class="fu">group_by</span>(<span class="st">`</span><span class="at">Continent/ Country</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb7-14"><a href="#cb7-14"></a>  <span class="fu">top_n</span>(<span class="dv">1</span>, date) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-hash="04_data_visualization_cache/html/plot1_e68fe6f55259560909d8c26f6fe6d11b">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a><span class="co"># 4.0 DATA VISUALIZATION ----</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb8-3"><a href="#cb8-3"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb8-4"><a href="#cb8-4"></a><span class="fu">library</span>(scales)</span>
+<span id="cb8-5"><a href="#cb8-5"></a><span class="fu">library</span>(ggrepel)</span>
+<span id="cb8-6"><a href="#cb8-6"></a><span class="co"># Line Plot</span></span>
+<span id="cb8-7"><a href="#cb8-7"></a>total_case_combined <span class="sc">%&gt;%</span></span>
+<span id="cb8-8"><a href="#cb8-8"></a>  </span>
+<span id="cb8-9"><a href="#cb8-9"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x=</span>date, <span class="at">y=</span><span class="st">`</span><span class="at">Cumulative</span><span class="st">`</span>, <span class="at">group =</span> <span class="st">`</span><span class="at">Continent/ Country</span><span class="st">`</span>, <span class="at">color =</span> <span class="st">`</span><span class="at">Continent/ Country</span><span class="st">`</span>)) <span class="sc">+</span></span>
+<span id="cb8-10"><a href="#cb8-10"></a>  </span>
+<span id="cb8-11"><a href="#cb8-11"></a>  <span class="fu">geom_line</span>(<span class="at">size =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb8-12"><a href="#cb8-12"></a></span>
+<span id="cb8-13"><a href="#cb8-13"></a>  <span class="fu">scale_x_date</span>(<span class="at">date_breaks=</span><span class="st">"1 month"</span>, <span class="at">date_labels =</span> <span class="st">"%B'%y"</span>, <span class="at">limits =</span> <span class="fu">as.Date</span>(<span class="fu">c</span>(<span class="st">'2020-01-01'</span>,<span class="st">'2023-06-01'</span>)) ) <span class="sc">+</span></span>
+<span id="cb8-14"><a href="#cb8-14"></a></span>
+<span id="cb8-15"><a href="#cb8-15"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span><span class="fu">number_format</span>(<span class="at">scale =</span> <span class="fl">1e-6</span>, </span>
+<span id="cb8-16"><a href="#cb8-16"></a>                                                    <span class="at">prefix =</span> <span class="st">""</span>,</span>
+<span id="cb8-17"><a href="#cb8-17"></a>                                                    <span class="at">suffix =</span> <span class="st">" M"</span>)) <span class="sc">+</span></span>
+<span id="cb8-18"><a href="#cb8-18"></a>  </span>
+<span id="cb8-19"><a href="#cb8-19"></a>  <span class="fu">scale_color_brewer</span>(<span class="at">palette=</span><span class="st">"Accent"</span>) <span class="sc">+</span></span>
+<span id="cb8-20"><a href="#cb8-20"></a>  </span>
+<span id="cb8-21"><a href="#cb8-21"></a>  <span class="fu">labs</span>(</span>
+<span id="cb8-22"><a href="#cb8-22"></a>    <span class="at">title    =</span> <span class="st">"COVID-19 Confirmed Cases Worldwide"</span>,</span>
+<span id="cb8-23"><a href="#cb8-23"></a>    <span class="at">subtitle =</span> <span class="fu">str_glue</span>(<span class="st">"As of {n}"</span>),</span>
+<span id="cb8-24"><a href="#cb8-24"></a>    <span class="at">x =</span> <span class="st">""</span>, <span class="co"># Override defaults for x and y</span></span>
+<span id="cb8-25"><a href="#cb8-25"></a>    <span class="at">y =</span> <span class="st">"Cumulative Cases"</span></span>
+<span id="cb8-26"><a href="#cb8-26"></a>  ) <span class="sc">+</span> </span>
+<span id="cb8-27"><a href="#cb8-27"></a>  </span>
+<span id="cb8-28"><a href="#cb8-28"></a><span class="fu">theme</span>(</span>
+<span id="cb8-29"><a href="#cb8-29"></a>  <span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">hjust =</span> <span class="dv">1</span>),</span>
+<span id="cb8-30"><a href="#cb8-30"></a>  <span class="at">legend.position =</span> <span class="st">"bottom"</span></span>
+<span id="cb8-31"><a href="#cb8-31"></a>) <span class="sc">+</span></span>
+<span id="cb8-32"><a href="#cb8-32"></a></span>
+<span id="cb8-33"><a href="#cb8-33"></a><span class="fu">geom_label_repel</span>(<span class="fu">aes</span>(<span class="at">label =</span> scales<span class="sc">::</span><span class="fu">number</span>(Cumulative)), </span>
+<span id="cb8-34"><a href="#cb8-34"></a>                <span class="at">data =</span> data_ends,</span>
+<span id="cb8-35"><a href="#cb8-35"></a>                <span class="at">nudge_x =</span> <span class="dv">1</span>,</span>
+<span id="cb8-36"><a href="#cb8-36"></a>                <span class="at">box.padding =</span> <span class="fl">0.5</span>,</span>
+<span id="cb8-37"><a href="#cb8-37"></a>                <span class="at">show.legend =</span> <span class="cn">FALSE</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>#&gt; Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
 #&gt; ℹ Please use `linewidth` instead.</code></pre>
 </div>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
-<figure class="figure"><p><a href="04_data_visualization_files/figure-html/unnamed-chunk-1-1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-1"><img src="04_data_visualization_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid figure-img" width="672"></a></p>
+<figure class="figure"><p><a href="04_data_visualization_files/figure-html/plot1-1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-1"><img src="04_data_visualization_files/figure-html/plot1-1.png" class="img-fluid figure-img" width="1152"></a></p>
 </figure>
 </div>
 </div>
@@ -386,46 +378,23 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>Visualize the distribution of the mortality rate (deaths/population).</p>
 <section id="source-code-1" class="level2" data-number="3.1"><h2 data-number="3.1" class="anchored" data-anchor-id="source-code-1">
 <span class="header-section-number">3.1</span> Source Code</h2>
-<div class="cell" data-hash="04_data_visualization_cache/html/unnamed-chunk-2_4089f4d3523e2dfbe882037392fda68d">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1"></a><span class="co"># 1.0 LOAD LIBRARY ----</span></span>
-<span id="cb11-2"><a href="#cb11-2"></a></span>
-<span id="cb11-3"><a href="#cb11-3"></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb11-4"><a href="#cb11-4"></a><span class="fu">library</span>(maps)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell" data-hash="04_data_visualization_cache/html/unnamed-chunk-2_937001523e3ac3a993ffa4b2e593b0d2">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1"></a><span class="co"># 1.0 LOAD LIBRARY ----</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a></span>
+<span id="cb10-3"><a href="#cb10-3"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb10-4"><a href="#cb10-4"></a><span class="fu">library</span>(maps)</span>
+<span id="cb10-5"><a href="#cb10-5"></a><span class="fu">library</span>(scales)</span>
+<span id="cb10-6"><a href="#cb10-6"></a></span>
+<span id="cb10-7"><a href="#cb10-7"></a></span>
+<span id="cb10-8"><a href="#cb10-8"></a><span class="co"># 2.0 DATA IMPORT ----</span></span>
+<span id="cb10-9"><a href="#cb10-9"></a></span>
+<span id="cb10-10"><a href="#cb10-10"></a><span class="co"># 2.1 for world map</span></span>
+<span id="cb10-11"><a href="#cb10-11"></a>world <span class="ot">&lt;-</span> <span class="fu">map_data</span>(<span class="st">"world"</span>)</span>
+<span id="cb10-12"><a href="#cb10-12"></a><span class="co"># 2.2 for covid data</span></span>
+<span id="cb10-13"><a href="#cb10-13"></a>covid_data_tbl <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"https://covid.ourworldindata.org/data/owid-covid-data.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>#&gt; 
-#&gt; Attaching package: 'maps'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>#&gt; The following object is masked from 'package:purrr':
-#&gt; 
-#&gt;     map</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1"></a><span class="fu">library</span>(scales)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>#&gt; 
-#&gt; Attaching package: 'scales'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>#&gt; The following object is masked from 'package:purrr':
-#&gt; 
-#&gt;     discard</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>#&gt; The following object is masked from 'package:readr':
-#&gt; 
-#&gt;     col_factor</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1"></a><span class="co"># 2.0 DATA IMPORT ----</span></span>
-<span id="cb18-2"><a href="#cb18-2"></a></span>
-<span id="cb18-3"><a href="#cb18-3"></a><span class="co"># 2.1 for world map</span></span>
-<span id="cb18-4"><a href="#cb18-4"></a>world <span class="ot">&lt;-</span> <span class="fu">map_data</span>(<span class="st">"world"</span>)</span>
-<span id="cb18-5"><a href="#cb18-5"></a><span class="co"># 2.2 for covid data</span></span>
-<span id="cb18-6"><a href="#cb18-6"></a>covid_data_tbl <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"https://covid.ourworldindata.org/data/owid-covid-data.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>#&gt; Rows: 307911 Columns: 67</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>#&gt; ── Column specification ────────────────────────────────────────────────────────
+<pre><code>#&gt; Rows: 307912 Columns: 67
+#&gt; ── Column specification ────────────────────────────────────────────────────────
 #&gt; Delimiter: ","
 #&gt; chr   (4): iso_code, continent, location, tests_units
 #&gt; dbl  (62): total_cases, new_cases, new_cases_smoothed, total_deaths, new_dea...
@@ -434,75 +403,78 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 #&gt; ℹ Use `spec()` to retrieve the full column specification for this data.
 #&gt; ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1"></a><span class="co"># 3.0 DATA WRANGLING ----</span></span>
-<span id="cb21-2"><a href="#cb21-2"></a></span>
-<span id="cb21-3"><a href="#cb21-3"></a><span class="co"># 3.1 Revise the location name to match with the world map data</span></span>
-<span id="cb21-4"><a href="#cb21-4"></a></span>
-<span id="cb21-5"><a href="#cb21-5"></a>covid_data_tbl <span class="ot">&lt;-</span> covid_data_tbl <span class="sc">%&gt;%</span> </span>
-<span id="cb21-6"><a href="#cb21-6"></a>  <span class="fu">mutate</span>(<span class="at">location =</span> <span class="fu">case_when</span>(</span>
-<span id="cb21-7"><a href="#cb21-7"></a>    </span>
-<span id="cb21-8"><a href="#cb21-8"></a>    location <span class="sc">==</span> <span class="st">"United Kingdom"</span> <span class="sc">~</span> <span class="st">"UK"</span>,</span>
-<span id="cb21-9"><a href="#cb21-9"></a>    location <span class="sc">==</span> <span class="st">"United States"</span> <span class="sc">~</span> <span class="st">"USA"</span>,</span>
-<span id="cb21-10"><a href="#cb21-10"></a>    location <span class="sc">==</span> <span class="st">"Democratic Republic of Congo"</span> <span class="sc">~</span> <span class="st">"Democratic Republic of the Congo"</span>,</span>
-<span id="cb21-11"><a href="#cb21-11"></a>    location <span class="sc">==</span> <span class="st">"Antigua and Barbuda"</span> <span class="sc">~</span> <span class="st">"Antigua"</span>,</span>
-<span id="cb21-12"><a href="#cb21-12"></a>    location <span class="sc">==</span> <span class="st">"Cote d'Ivoire"</span> <span class="sc">~</span> <span class="st">"Ivory Coast"</span>,</span>
-<span id="cb21-13"><a href="#cb21-13"></a>    location <span class="sc">==</span> <span class="st">"Czechia"</span> <span class="sc">~</span> <span class="st">"Czech Republic"</span>,</span>
-<span id="cb21-14"><a href="#cb21-14"></a>    location <span class="sc">==</span> <span class="st">"Timor"</span> <span class="sc">~</span> <span class="st">"Timor-Leste"</span>,</span>
-<span id="cb21-15"><a href="#cb21-15"></a>    location <span class="sc">==</span> <span class="st">"Trinidad and Tobago"</span> <span class="sc">~</span> <span class="st">"Trinidad"</span>,</span>
-<span id="cb21-16"><a href="#cb21-16"></a>    <span class="cn">TRUE</span> <span class="sc">~</span> location</span>
-<span id="cb21-17"><a href="#cb21-17"></a>    </span>
-<span id="cb21-18"><a href="#cb21-18"></a>  )) </span>
-<span id="cb21-19"><a href="#cb21-19"></a></span>
-<span id="cb21-20"><a href="#cb21-20"></a></span>
-<span id="cb21-21"><a href="#cb21-21"></a><span class="co"># 3.2 Select columns and filter categories</span></span>
-<span id="cb21-22"><a href="#cb21-22"></a>mortality_rate_tbl <span class="ot">&lt;-</span> covid_data_tbl <span class="sc">%&gt;%</span></span>
-<span id="cb21-23"><a href="#cb21-23"></a>  </span>
-<span id="cb21-24"><a href="#cb21-24"></a>  <span class="fu">select</span>(location, date, total_deaths, population) <span class="sc">%&gt;%</span></span>
-<span id="cb21-25"><a href="#cb21-25"></a>  </span>
-<span id="cb21-26"><a href="#cb21-26"></a>  <span class="co"># Replace all NA values to 0</span></span>
-<span id="cb21-27"><a href="#cb21-27"></a>  <span class="fu">replace</span>(<span class="fu">is.na</span>(.), <span class="dv">0</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb21-28"><a href="#cb21-28"></a></span>
-<span id="cb21-29"><a href="#cb21-29"></a>  <span class="co"># Create mortality rate column</span></span>
-<span id="cb21-30"><a href="#cb21-30"></a>  <span class="fu">group_by</span>(location) <span class="sc">%&gt;%</span></span>
-<span id="cb21-31"><a href="#cb21-31"></a>  <span class="fu">mutate</span>(<span class="at">mortality_rate =</span> total_deaths <span class="sc">/</span> population) <span class="sc">%&gt;%</span></span>
-<span id="cb21-32"><a href="#cb21-32"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb21-33"><a href="#cb21-33"></a></span>
-<span id="cb21-34"><a href="#cb21-34"></a>  <span class="co"># Filter only certain date</span></span>
-<span id="cb21-35"><a href="#cb21-35"></a>  <span class="fu">filter</span>(date <span class="sc">==</span> <span class="st">"2022-04-16"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb21-36"><a href="#cb21-36"></a>  </span>
-<span id="cb21-37"><a href="#cb21-37"></a>  <span class="co"># Rename column name</span></span>
-<span id="cb21-38"><a href="#cb21-38"></a>  <span class="fu">rename</span>(<span class="at">region =</span> location)</span>
-<span id="cb21-39"><a href="#cb21-39"></a></span>
-<span id="cb21-40"><a href="#cb21-40"></a><span class="co"># 3.3 Format as numeric value for mortality rate</span></span>
-<span id="cb21-41"><a href="#cb21-41"></a>mortality_rate_tbl<span class="sc">$</span>mortality_rate <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(mortality_rate_tbl<span class="sc">$</span>mortality_rate)</span>
-<span id="cb21-42"><a href="#cb21-42"></a></span>
-<span id="cb21-43"><a href="#cb21-43"></a><span class="co"># 3.4 Left join from 2 tables</span></span>
-<span id="cb21-44"><a href="#cb21-44"></a></span>
-<span id="cb21-45"><a href="#cb21-45"></a>mortality_rate_map <span class="ot">&lt;-</span> <span class="fu">left_join</span>(mortality_rate_tbl,world, <span class="at">by =</span> <span class="st">"region"</span>)</span>
-<span id="cb21-46"><a href="#cb21-46"></a></span>
-<span id="cb21-47"><a href="#cb21-47"></a><span class="co"># 4.0 DATA VISUALIZATION ----</span></span>
-<span id="cb21-48"><a href="#cb21-48"></a></span>
-<span id="cb21-49"><a href="#cb21-49"></a><span class="co"># Map Plot</span></span>
-<span id="cb21-50"><a href="#cb21-50"></a></span>
-<span id="cb21-51"><a href="#cb21-51"></a>  <span class="fu">ggplot</span>(mortality_rate_map, <span class="fu">aes</span>(<span class="at">map_id =</span> region, <span class="at">fill =</span> mortality_rate))<span class="sc">+</span></span>
-<span id="cb21-52"><a href="#cb21-52"></a>  <span class="fu">geom_map</span>(<span class="at">map =</span> mortality_rate_map,  <span class="at">color =</span> <span class="st">"white"</span>)<span class="sc">+</span></span>
-<span id="cb21-53"><a href="#cb21-53"></a>  <span class="fu">expand_limits</span>(<span class="at">x =</span> mortality_rate_map<span class="sc">$</span>long, <span class="at">y =</span> mortality_rate_map<span class="sc">$</span>lat) <span class="sc">+</span></span>
-<span id="cb21-54"><a href="#cb21-54"></a>  <span class="fu">scale_fill_gradient</span>(<span class="at">low=</span><span class="st">'red'</span>, <span class="at">high=</span><span class="st">'grey20'</span>, <span class="at">labels =</span> percent) <span class="sc">+</span></span>
-<span id="cb21-55"><a href="#cb21-55"></a></span>
-<span id="cb21-56"><a href="#cb21-56"></a>  <span class="co"># add labels</span></span>
-<span id="cb21-57"><a href="#cb21-57"></a>  <span class="fu">labs</span>(</span>
-<span id="cb21-58"><a href="#cb21-58"></a>    <span class="at">title =</span> <span class="st">"Confirmed COVID-19 Deaths Relative to Population"</span>,</span>
-<span id="cb21-59"><a href="#cb21-59"></a>    <span class="at">caption =</span> <span class="st">"2022-04-16"</span>,</span>
-<span id="cb21-60"><a href="#cb21-60"></a>    <span class="at">x =</span> <span class="st">""</span>,</span>
-<span id="cb21-61"><a href="#cb21-61"></a>    <span class="at">y =</span> <span class="st">""</span>,</span>
-<span id="cb21-62"><a href="#cb21-62"></a>    ) <span class="sc">+</span></span>
-<span id="cb21-63"><a href="#cb21-63"></a>    </span>
-<span id="cb21-64"><a href="#cb21-64"></a>  <span class="fu">theme</span>(</span>
-<span id="cb21-65"><a href="#cb21-65"></a>    <span class="at">legend.position =</span> <span class="st">"right"</span></span>
-<span id="cb21-66"><a href="#cb21-66"></a>    )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1"></a><span class="co"># 3.0 DATA WRANGLING ----</span></span>
+<span id="cb12-2"><a href="#cb12-2"></a></span>
+<span id="cb12-3"><a href="#cb12-3"></a><span class="co"># 3.1 Revise the location name to match with the world map data</span></span>
+<span id="cb12-4"><a href="#cb12-4"></a></span>
+<span id="cb12-5"><a href="#cb12-5"></a>covid_data_tbl <span class="ot">&lt;-</span> covid_data_tbl <span class="sc">%&gt;%</span> </span>
+<span id="cb12-6"><a href="#cb12-6"></a>  <span class="fu">mutate</span>(<span class="at">location =</span> <span class="fu">case_when</span>(</span>
+<span id="cb12-7"><a href="#cb12-7"></a>    </span>
+<span id="cb12-8"><a href="#cb12-8"></a>    location <span class="sc">==</span> <span class="st">"United Kingdom"</span> <span class="sc">~</span> <span class="st">"UK"</span>,</span>
+<span id="cb12-9"><a href="#cb12-9"></a>    location <span class="sc">==</span> <span class="st">"United States"</span> <span class="sc">~</span> <span class="st">"USA"</span>,</span>
+<span id="cb12-10"><a href="#cb12-10"></a>    location <span class="sc">==</span> <span class="st">"Democratic Republic of Congo"</span> <span class="sc">~</span> <span class="st">"Democratic Republic of the Congo"</span>,</span>
+<span id="cb12-11"><a href="#cb12-11"></a>    location <span class="sc">==</span> <span class="st">"Antigua and Barbuda"</span> <span class="sc">~</span> <span class="st">"Antigua"</span>,</span>
+<span id="cb12-12"><a href="#cb12-12"></a>    location <span class="sc">==</span> <span class="st">"Cote d'Ivoire"</span> <span class="sc">~</span> <span class="st">"Ivory Coast"</span>,</span>
+<span id="cb12-13"><a href="#cb12-13"></a>    location <span class="sc">==</span> <span class="st">"Czechia"</span> <span class="sc">~</span> <span class="st">"Czech Republic"</span>,</span>
+<span id="cb12-14"><a href="#cb12-14"></a>    location <span class="sc">==</span> <span class="st">"Timor"</span> <span class="sc">~</span> <span class="st">"Timor-Leste"</span>,</span>
+<span id="cb12-15"><a href="#cb12-15"></a>    location <span class="sc">==</span> <span class="st">"Trinidad and Tobago"</span> <span class="sc">~</span> <span class="st">"Trinidad"</span>,</span>
+<span id="cb12-16"><a href="#cb12-16"></a>    <span class="cn">TRUE</span> <span class="sc">~</span> location</span>
+<span id="cb12-17"><a href="#cb12-17"></a>    </span>
+<span id="cb12-18"><a href="#cb12-18"></a>  )) </span>
+<span id="cb12-19"><a href="#cb12-19"></a></span>
+<span id="cb12-20"><a href="#cb12-20"></a></span>
+<span id="cb12-21"><a href="#cb12-21"></a><span class="co"># 3.2 Select columns and filter categories</span></span>
+<span id="cb12-22"><a href="#cb12-22"></a>mortality_rate_tbl <span class="ot">&lt;-</span> covid_data_tbl <span class="sc">%&gt;%</span></span>
+<span id="cb12-23"><a href="#cb12-23"></a>  </span>
+<span id="cb12-24"><a href="#cb12-24"></a>  <span class="fu">select</span>(location, date, total_deaths, population) <span class="sc">%&gt;%</span></span>
+<span id="cb12-25"><a href="#cb12-25"></a>  </span>
+<span id="cb12-26"><a href="#cb12-26"></a>  <span class="co"># Replace all NA values to 0</span></span>
+<span id="cb12-27"><a href="#cb12-27"></a>  <span class="fu">replace</span>(<span class="fu">is.na</span>(.), <span class="dv">0</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb12-28"><a href="#cb12-28"></a></span>
+<span id="cb12-29"><a href="#cb12-29"></a>  <span class="co"># Create mortality rate column</span></span>
+<span id="cb12-30"><a href="#cb12-30"></a>  <span class="fu">group_by</span>(location) <span class="sc">%&gt;%</span></span>
+<span id="cb12-31"><a href="#cb12-31"></a>  <span class="fu">mutate</span>(<span class="at">mortality_rate =</span> total_deaths <span class="sc">/</span> population) <span class="sc">%&gt;%</span></span>
+<span id="cb12-32"><a href="#cb12-32"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb12-33"><a href="#cb12-33"></a></span>
+<span id="cb12-34"><a href="#cb12-34"></a>  <span class="co"># Filter only certain date</span></span>
+<span id="cb12-35"><a href="#cb12-35"></a>  <span class="fu">filter</span>(date <span class="sc">==</span> <span class="st">"2022-04-16"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb12-36"><a href="#cb12-36"></a>  </span>
+<span id="cb12-37"><a href="#cb12-37"></a>  <span class="co"># Rename column name</span></span>
+<span id="cb12-38"><a href="#cb12-38"></a>  <span class="fu">rename</span>(<span class="at">region =</span> location)</span>
+<span id="cb12-39"><a href="#cb12-39"></a></span>
+<span id="cb12-40"><a href="#cb12-40"></a><span class="co"># 3.3 Format as numeric value for mortality rate</span></span>
+<span id="cb12-41"><a href="#cb12-41"></a>mortality_rate_tbl<span class="sc">$</span>mortality_rate <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(mortality_rate_tbl<span class="sc">$</span>mortality_rate)</span>
+<span id="cb12-42"><a href="#cb12-42"></a></span>
+<span id="cb12-43"><a href="#cb12-43"></a><span class="co"># 3.4 Left join from 2 tables</span></span>
+<span id="cb12-44"><a href="#cb12-44"></a></span>
+<span id="cb12-45"><a href="#cb12-45"></a>mortality_rate_map <span class="ot">&lt;-</span> <span class="fu">left_join</span>(mortality_rate_tbl,world, <span class="at">by =</span> <span class="st">"region"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-hash="04_data_visualization_cache/html/plot2_658ec840384e3d0873467caecfc67b1d">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1"></a><span class="co"># 4.0 DATA VISUALIZATION ----</span></span>
+<span id="cb13-2"><a href="#cb13-2"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb13-3"><a href="#cb13-3"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb13-4"><a href="#cb13-4"></a><span class="fu">library</span>(scales)</span>
+<span id="cb13-5"><a href="#cb13-5"></a><span class="co"># Map Plot</span></span>
+<span id="cb13-6"><a href="#cb13-6"></a></span>
+<span id="cb13-7"><a href="#cb13-7"></a>  <span class="fu">ggplot</span>(mortality_rate_map, <span class="fu">aes</span>(<span class="at">map_id =</span> region, <span class="at">fill =</span> mortality_rate))<span class="sc">+</span></span>
+<span id="cb13-8"><a href="#cb13-8"></a>  <span class="fu">geom_map</span>(<span class="at">map =</span> mortality_rate_map,  <span class="at">color =</span> <span class="st">"white"</span>)<span class="sc">+</span></span>
+<span id="cb13-9"><a href="#cb13-9"></a>  <span class="fu">expand_limits</span>(<span class="at">x =</span> mortality_rate_map<span class="sc">$</span>long, <span class="at">y =</span> mortality_rate_map<span class="sc">$</span>lat) <span class="sc">+</span></span>
+<span id="cb13-10"><a href="#cb13-10"></a>  <span class="fu">scale_fill_gradient</span>(<span class="at">low=</span><span class="st">'red'</span>, <span class="at">high=</span><span class="st">'grey20'</span>, <span class="at">labels =</span> percent) <span class="sc">+</span></span>
+<span id="cb13-11"><a href="#cb13-11"></a></span>
+<span id="cb13-12"><a href="#cb13-12"></a>  <span class="co"># add labels</span></span>
+<span id="cb13-13"><a href="#cb13-13"></a>  <span class="fu">labs</span>(</span>
+<span id="cb13-14"><a href="#cb13-14"></a>    <span class="at">title =</span> <span class="st">"Confirmed COVID-19 Deaths Relative to Population"</span>,</span>
+<span id="cb13-15"><a href="#cb13-15"></a>    <span class="at">caption =</span> <span class="st">"2022-04-16"</span>,</span>
+<span id="cb13-16"><a href="#cb13-16"></a>    <span class="at">x =</span> <span class="st">""</span>,</span>
+<span id="cb13-17"><a href="#cb13-17"></a>    <span class="at">y =</span> <span class="st">""</span>,</span>
+<span id="cb13-18"><a href="#cb13-18"></a>    ) <span class="sc">+</span></span>
+<span id="cb13-19"><a href="#cb13-19"></a>    </span>
+<span id="cb13-20"><a href="#cb13-20"></a>  <span class="fu">theme</span>(</span>
+<span id="cb13-21"><a href="#cb13-21"></a>    <span class="at">legend.position =</span> <span class="st">"right"</span></span>
+<span id="cb13-22"><a href="#cb13-22"></a>    )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
-<figure class="figure"><p><a href="04_data_visualization_files/figure-html/unnamed-chunk-2-1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-2"><img src="04_data_visualization_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid figure-img" width="672"></a></p>
+<figure class="figure"><p><a href="04_data_visualization_files/figure-html/plot2-1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-2"><img src="04_data_visualization_files/figure-html/plot2-1.png" class="img-fluid figure-img" width="1152"></a></p>
 </figure>
 </div>
 </div>
@@ -758,7 +730,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 });
 </script>
 </div> <!-- /content -->
-<script>var lightboxQuarto = GLightbox({"closeEffect":"zoom","loop":true,"selector":".lightbox","openEffect":"zoom","descPosition":"bottom"});</script>
+<script>var lightboxQuarto = GLightbox({"openEffect":"zoom","closeEffect":"zoom","selector":".lightbox","loop":true,"descPosition":"bottom"});</script>
 
 
 </body></html>

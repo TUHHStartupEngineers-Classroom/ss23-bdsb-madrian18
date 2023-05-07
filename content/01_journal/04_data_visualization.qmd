@@ -88,9 +88,13 @@ n = Sys.Date()-4
 data_ends <- total_case_combined %>% 
   group_by(`Continent/ Country`) %>% 
   top_n(1, date) 
-
+```
+```{r plot1, fig.width=12, fig.height=8}
 # 4.0 DATA VISUALIZATION ----
-
+library(dplyr)
+library(ggplot2)
+library(scales)
+library(ggrepel)
 # Line Plot
 total_case_combined %>%
   
@@ -192,9 +196,12 @@ mortality_rate_tbl$mortality_rate <- as.numeric(mortality_rate_tbl$mortality_rat
 # 3.4 Left join from 2 tables
 
 mortality_rate_map <- left_join(mortality_rate_tbl,world, by = "region")
-
+```
+```{r plot2, fig.width=12, fig.height=7}
 # 4.0 DATA VISUALIZATION ----
-
+library(ggplot2)
+library(dplyr)
+library(scales)
 # Map Plot
 
   ggplot(mortality_rate_map, aes(map_id = region, fill = mortality_rate))+
