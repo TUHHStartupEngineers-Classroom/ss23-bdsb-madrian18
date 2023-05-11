@@ -1,8 +1,224 @@
 ---
 title: "Data Visualization"
-author: "Joschka Schwarz"
+author: "Muhammad Adrian"
 ---
 
-::: callout-note
-You can delete everything in here and start fresh.
-:::
+# Data Visualization
+
+In this section, the important process of data visualization is acquired in detail. Therefore, data can further be visualized for the importance of exploratory data analysis. Moreover, the concept of ggplot2 for building different data graphics and craft effective visualization for big data is introduced.
+
+
+# Challenge 1
+
+Map the time course of the cumulative Covid-19 cases.
+
+## Source Code & Result
+
+```{r}
+# 1.0 LOAD LIBRARY ----
+
+library(tidyverse)
+library(ggrepel)
+
+# 2.0 DATA IMPORT ----
+
+covid_data_tbl <- read_csv("https://covid.ourworldindata.org/data/owid-covid-data.csv")
+
+# 3.0 DATA WRANGLING ----
+
+# 3.1 Manipulate for continent = Europe
+
+# Select columns and filter categories
+total_case_continent_tbl <- covid_data_tbl %>%
+  
+  select(continent, location, date, total_cases) %>%
+  
+  # Filter only Europe
+  filter(continent == "Europe" & date < Sys.Date()-4) %>%
+  
+  # Group by category and summarize
+  group_by(continent,location,date) %>%
+  summarise(total_cases = sum(total_cases)) %>%
+  ungroup() %>%
+  
+  # Replace all NA value to 0
+  replace(is.na(.), 0) %>%
+  
+  # Group by category and summarize
+  group_by(continent,date) %>%
+  summarise(total_cases = sum(total_cases)) %>%
+  ungroup() %>%
+  
+  # Rename column name
+  rename('Continent/ Country' = continent,
+         'Cumulative' = total_cases)
+
+
+# 3.2 Manipulate for location = Germany, UK, France, Spain, US
+
+# Select columns and filter categories
+total_case_location_tbl <- covid_data_tbl %>%
+  
+  select(location, date, total_cases) %>%
+  filter(location %in% c("Germany","United Kingdom","France","Spain","United States") & date < Sys.Date()-4) %>%
+  
+  # Group by category and summarize
+  group_by(location, date) %>%
+  summarise(total_cases = sum(total_cases)) %>%
+  ungroup() %>%
+  
+  # Replace all NA value to 0
+  replace(is.na(.), 0) %>%
+  
+  # Rename column name
+  rename('Continent/ Country' = location,
+         'Cumulative' = total_cases)
+  
+# 3.3 Join row from 2 tables
+
+total_case_combined <- total_case_continent_tbl %>%
+  bind_rows(total_case_location_tbl)
+
+# 3.4 Create Date 4 days prior the Sys.Date due to data is not completed at Sys.Date
+
+n = Sys.Date()-4
+
+
+# 3.5 Filter the last values to show labels on the plot
+data_ends <- total_case_combined %>% 
+  group_by(`Continent/ Country`) %>% 
+  top_n(1, date) 
+```
+```{r plot1, fig.width=12, fig.height=8}
+# 4.0 DATA VISUALIZATION ----
+library(dplyr)
+library(ggplot2)
+library(scales)
+library(ggrepel)
+# Line Plot
+total_case_combined %>%
+  
+  ggplot(aes(x=date, y=`Cumulative`, group = `Continent/ Country`, color = `Continent/ Country`)) +
+  
+  geom_line(size = 1) +
+
+  scale_x_date(date_breaks="1 month", date_labels = "%B'%y", limits = as.Date(c('2020-01-01','2023-06-01')) ) +
+
+  scale_y_continuous(labels = scales::number_format(scale = 1e-6, 
+                                                    prefix = "",
+                                                    suffix = " M")) +
+  
+  scale_color_brewer(palette="Accent") +
+  
+  labs(
+    title    = "COVID-19 Confirmed Cases Worldwide",
+    subtitle = str_glue("As of {n}"),
+    x = "", # Override defaults for x and y
+    y = "Cumulative Cases"
+  ) + 
+  
+theme(
+  axis.text.x = element_text(angle = 45, hjust = 1),
+  legend.position = "bottom"
+) +
+
+geom_label_repel(aes(label = scales::number(Cumulative)), 
+                data = data_ends,
+                nudge_x = 1,
+                box.padding = 0.5,
+                show.legend = FALSE) 
+
+```
+
+# Challenge 2
+
+Visualize the distribution of the mortality rate (deaths/population).
+
+## Source Code & Result
+
+```{r}
+# 1.0 LOAD LIBRARY ----
+
+library(tidyverse)
+library(maps)
+library(scales)
+
+
+# 2.0 DATA IMPORT ----
+
+# 2.1 for world map
+world <- map_data("world")
+# 2.2 for covid data
+covid_data_tbl <- read_csv("https://covid.ourworldindata.org/data/owid-covid-data.csv")
+
+# 3.0 DATA WRANGLING ----
+
+# 3.1 Revise the location name to match with the world map data
+
+covid_data_tbl <- covid_data_tbl %>% 
+  mutate(location = case_when(
+    
+    location == "United Kingdom" ~ "UK",
+    location == "United States" ~ "USA",
+    location == "Democratic Republic of Congo" ~ "Democratic Republic of the Congo",
+    location == "Antigua and Barbuda" ~ "Antigua",
+    location == "Cote d'Ivoire" ~ "Ivory Coast",
+    location == "Czechia" ~ "Czech Republic",
+    location == "Timor" ~ "Timor-Leste",
+    location == "Trinidad and Tobago" ~ "Trinidad",
+    TRUE ~ location
+    
+  )) 
+
+
+# 3.2 Select columns and filter categories
+mortality_rate_tbl <- covid_data_tbl %>%
+  
+  select(location, date, total_deaths, population) %>%
+  
+  # Replace all NA values to 0
+  replace(is.na(.), 0) %>%
+
+  # Create mortality rate column
+  group_by(location) %>%
+  mutate(mortality_rate = total_deaths / population) %>%
+  ungroup() %>%
+
+  # Filter only certain date
+  filter(date == "2022-04-16") %>%
+  
+  # Rename column name
+  rename(region = location)
+
+# 3.3 Format as numeric value for mortality rate
+mortality_rate_tbl$mortality_rate <- as.numeric(mortality_rate_tbl$mortality_rate)
+
+# 3.4 Left join from 2 tables
+
+mortality_rate_map <- left_join(mortality_rate_tbl,world, by = "region")
+```
+```{r plot2, fig.width=12, fig.height=7}
+# 4.0 DATA VISUALIZATION ----
+library(ggplot2)
+library(dplyr)
+library(scales)
+# Map Plot
+
+  ggplot(mortality_rate_map, aes(map_id = region, fill = mortality_rate))+
+  geom_map(map = mortality_rate_map,  color = "white")+
+  expand_limits(x = mortality_rate_map$long, y = mortality_rate_map$lat) +
+  scale_fill_gradient(low='red', high='grey20', labels = percent) +
+
+  # add labels
+  labs(
+    title = "Confirmed COVID-19 Deaths Relative to Population",
+    caption = "2022-04-16",
+    x = "",
+    y = "",
+    ) +
+    
+  theme(
+    legend.position = "right"
+    )
+
+```
